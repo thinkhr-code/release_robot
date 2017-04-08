@@ -1,5 +1,7 @@
 require 'octokit'
 
+PODIO_URL_REGEX = /https:\/\/podio.com\/hranswerlink-8ee92nawfl\/issue-tracker\/apps\/product-feedback\/items\/\d+/
+
 def labels
   ['Ready for Thursday Release', 'Ready for Immediate Release']
 end
@@ -53,6 +55,10 @@ def collect_pull_requests(repo, all_issues)
   end
 end
 
+def method_name
+
+end
+
 def sort_issue_by_status(issue, status, repo_name)
   case status
   when 'success' then pull_requests['success'] << [repo_name, issue]
@@ -63,15 +69,21 @@ def sort_issue_by_status(issue, status, repo_name)
   print " -- #{status}\n"
 end
 
+def podio_urls(repo_name, issue)
+  pr = client.pull_request(repo_name, issue.number)
+  pr.body.scan PODIO_URL_REGEX
+end
+
 def print_prep_list
   print_title 'Prep list for #releases'
 
   puts "For today's release:\n\n"
 
   pull_requests.each_pair do |status, issues|
-    issues.each do |(_, issue)|
+    issues.each do |(repo_name, issue)|
       puts issue.title
       puts issue.html_url
+      podio_urls(repo_name, issue).each { |url| puts url }
       puts "*Build #{status}*"
       puts
     end
