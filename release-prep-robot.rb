@@ -1,9 +1,12 @@
 require 'octokit'
 
 PODIO_URL_REGEX = /https:\/\/podio.com\/hranswerlink-8ee92nawfl\/issue-tracker\/apps\/product-feedback\/items\/\d+/
+RELEASE_BASE_BRANCH = 'weekly-release'.freeze
+THURSDAY_LABEL = 'Ready for Thursday Release'.freeze
+IMMEDIATE_LABEL = 'Ready for Immediate Release'.freeze
 
 def labels
-  ['Ready for Thursday Release', 'Ready for Immediate Release']
+  [THURSDAY_LABEL, IMMEDIATE_LABEL]
 end
 
 def client
@@ -33,30 +36,39 @@ def run
   repos.each do |repo|
     next unless repo.owner.login == 'MammothHR'
 
-    puts "Fetching issues for #{repo.full_name}"
+    repo_name = repo.full_name
+    puts "Fetching issues for #{repo_name}"
 
     all_issues = labels.map do |label|
-      client.list_issues(repo.full_name, labels: label)
+      client.list_issues(repo_name, labels: label)
     end.flatten
 
-    collect_pull_requests(repo, all_issues)
+    all_issues.each do |issue|
+      collect_pull_requests(repo_name, issue)
+    end
   end
 end
 
-def collect_pull_requests(repo, all_issues)
-  all_issues.each do |issue|
-    print "- Determining build status for #{issue.number}"
-    pull = client.pull_request(repo.full_name, issue.number)
+def collect_pull_requests(repo_name, issue)
+  print "- Determining build status for #{issue.number}"
+  pull_request = client.pull_request(repo_name, issue.number)
 
-    # Build status
-    status = client.combined_status(repo.full_name, pull.head.sha)
+  # Build status
+  status = client.combined_status(repo_name, pull_request.head.sha)
 
-    sort_issue_by_status(issue, status.state, repo.full_name)
-  end
+  change_base(repo_name, pull_request)
+
+  sort_issue_by_status(issue, status.state, repo_name)
 end
 
-def method_name
-
+def change_base(repo_name, pull_request)
+  client.update_pull_request(
+    repo_name,
+    pull_request.number,
+    nil,
+    nil,
+    base: RELEASE_BASE_BRANCH
+  )
 end
 
 def sort_issue_by_status(issue, status, repo_name)
