@@ -69,6 +69,9 @@ def change_base(repo_name, pull_request)
     nil,
     base: RELEASE_BASE_BRANCH
   )
+rescue Octokit::UnprocessableEntity => ex
+  puts "Error occurred when attempting to change base branch to #{RELEASE_BASE_BRANCH}:"
+  puts ex.message
 end
 
 def sort_issue_by_status(issue, status, repo_name)
