@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require 'release_robot'
+require 'release_robot/version'
+require 'yaml'
+
+ReleaseRobot.run(ARGV)
