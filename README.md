@@ -2,19 +2,15 @@
 
 ## Installation
 
-This is just a ruby script, so it doesn't require any installation. It does, however, rely on the octokit gem, so you will need to install that:
 ```bash
-gem install octokit
+$ rake install
+$ release_robot
 ```
-(Verified working with octokit v4.6.2.)
 
 ## Usage
 
-This requires your Github username and password to authenticate. They are accessed via the `GITHUB_USERNAME` and `GITHUB_PASSWORD` envars. Once those are stored:
+This requires your Github username and password to authenticate and requires that you *do not* have 2-factor auth setup for Github. The gem will prompt you for those credentials on first run and store them in `~/.release_robot_settings.yml`.
 
-```bash
-$ ruby release_prep_robot.rb
-```
 ## What it does
 
 Currently, this gem will scan all repositories in the `MammothHR` Github account, collect any Pull Requests that are labeled with "Ready for Thursday Release" or "Ready for Immediate Release," change the base branch to `weekly-release`, determine the build status from Travis, parse any Podio URLs from the Pull Request body, and print out two summaries:
@@ -23,6 +19,7 @@ Currently, this gem will scan all repositories in the `MammothHR` Github account
 
 ## Next steps to automate
 
+- post reminder about updating versions in package.json if an addon is updated
 - tag repos with the correct tag
   - For the most part, for Thursday releases, this will be the next minor version (i.e. if the last tag was v2.13.2, then next is v2.13.3).
   - For hrsc and hrsc-ember, their tags should always be in sync
@@ -33,7 +30,7 @@ Currently, this gem will scan all repositories in the `MammothHR` Github account
   - auto teardown
 - mark Podio tasks as Complete after deploy (perhaps a separate script)
 - skip CI for all but the last merge to `weekly-release`
-  - Can be done by adding 'skip ci' to the merge commit (in th web interface, this can be done when “Confirm Merge” comes up; unsure about API)
+  - Can be done by adding 'skip ci' to the merge commit (in the web interface, this can be done when “Confirm Merge” comes up; unsure about API)
 - figure out a standard way to define pre- or post-deploy steps so those can be included in the release prep somehow
 
 *"Nice to have" Slack integrations:*
