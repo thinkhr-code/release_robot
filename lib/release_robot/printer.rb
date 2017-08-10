@@ -1,9 +1,12 @@
 module ReleaseRobot
   class Printer
-    attr_accessor :pull_requests
+    PODIO_URL_REGEX = /https:\/\/podio.com\/hranswerlink-8ee92nawfl\/issue-tracker\/apps\/product-feedback\/items\/\d+/
 
-    def initialize(pull_requests)
+    attr_accessor :pull_requests, :client
+
+    def initialize(pull_requests, client)
       @pull_requests = pull_requests
+      @client = client
     end
 
     def print_all
@@ -47,6 +50,11 @@ module ReleaseRobot
       puts title
       puts '-' * 50
       puts
+    end
+
+    def podio_urls(repo_name, issue)
+      pr = client.pull_request(repo_name, issue.number)
+      pr.body.scan PODIO_URL_REGEX
     end
   end
 end

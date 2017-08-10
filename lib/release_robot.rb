@@ -20,9 +20,11 @@ module ReleaseRobot
 
       write_missing_envars(missing_envars) if missing_envars.any?
 
-      pull_requests = ReleaseRobot::Main.start
+      robot = ReleaseRobot::Main.new
+      pull_requests = robot.start
+      client = robot.client
 
-      ReleaseRobot::Printer.new(pull_requests).print_all
+      ReleaseRobot::Printer.new(pull_requests, client).print_all
     end
 
     def parse(args)

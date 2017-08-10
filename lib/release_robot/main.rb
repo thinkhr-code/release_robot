@@ -1,15 +1,8 @@
 module ReleaseRobot
   class Main
-    PODIO_URL_REGEX = /https:\/\/podio.com\/hranswerlink-8ee92nawfl\/issue-tracker\/apps\/product-feedback\/items\/\d+/
     RELEASE_BASE_BRANCH = 'weekly-release'.freeze
     THURSDAY_LABEL = 'Ready for Thursday Release'.freeze
     IMMEDIATE_LABEL = 'Ready for Immediate Release'.freeze
-
-    class << self
-      def start
-        new.start
-      end
-    end
 
     def start
       repos.each do |repo|
@@ -90,11 +83,6 @@ module ReleaseRobot
       end
 
       print " -- #{status}\n"
-    end
-
-    def podio_urls(repo_name, issue)
-      pr = client.pull_request(repo_name, issue.number)
-      pr.body.scan PODIO_URL_REGEX
     end
   end
 end
