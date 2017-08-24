@@ -57,7 +57,7 @@ module ReleaseRobot
       # Build status
       status = client.combined_status(repo_name, pull_request.head.sha)
 
-      change_base(repo_name, pull_request)
+      # change_base(repo_name, pull_request)
 
       sort_issue_by_status(issue, status.state, repo_name)
     end
