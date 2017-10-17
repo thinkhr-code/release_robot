@@ -1,7 +1,7 @@
 module ReleaseRobot
   class Main
     REPO_OWNER = 'MammothHR'.freeze
-    VERSION_TAG = /^v?\d+.\d+.\d+$/
+    MINOR_VERSION_TAG = /^v?\d+.\d+.0$/
     PULL_REQUEST_NUMBER = /Merge pull request #(...)/
 
     def start
@@ -10,14 +10,22 @@ module ReleaseRobot
 
         repo_name = repo.full_name
 
+
         puts "Fetching issues for #{repo_name}"
 
-        tag = get_latest_tag(repo_name)
+        tags = client.tags(repo_name)
+        minor_tag = get_latest_minor_tag(tags)
+        latest_tag = tags.first
 
-        next if tag.nil?
+        next if minor_tag.nil?
 
-        merged_prs = get_merged_prs_since_tag(repo_name, tag)
-        pull_requests << { repo_name => merged_prs }
+        merged_prs = get_merged_prs_since_tag(repo_name, minor_tag)
+        repo_details = {
+          latest_minor_version: minor_tag.name,
+          latest_any_version: latest_tag.name,
+          merged: merged_prs
+        }
+        pull_requests << [repo_name, repo_details]
       end
 
       return pull_requests
@@ -42,8 +50,8 @@ module ReleaseRobot
       @pull_requests ||= []
     end
 
-    def get_latest_tag(repo_name)
-      client.tags(repo_name).first
+    def get_latest_minor_tag(tags)
+      tags.detect{ |tag| tag.name =~ MINOR_VERSION_TAG }
     end
 
     def get_merged_prs_since_tag(repo_name, tag)

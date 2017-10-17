@@ -18,13 +18,19 @@ module ReleaseRobot
 
       puts "For today's release:\n\n"
 
-      pull_requests.each do |hsh|
+      pull_requests.each do |(full_repo_name, details_hsh)|
         owner_name_length = ReleaseRobot::Main::REPO_OWNER.size + 1
-        repo_name = hsh.keys.first[owner_name_length..-1]
-        prs = hsh.values.flatten
+        repo_name = full_repo_name[owner_name_length..-1]
+        latest_minor_version = details_hsh[:latest_minor_version]
+        latest_any_version = details_hsh[:latest_any_version]
+        prs = details_hsh[:merged]
 
         if prs.any?
-          puts repo_name
+          puts repo_name.upcase
+          print 'Latest Version: '
+          puts latest_any_version if latest_any_version
+          print 'Latest Minor Version: '
+          puts latest_minor_version if latest_minor_version
           puts
         end
 
