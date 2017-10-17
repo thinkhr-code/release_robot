@@ -11,7 +11,6 @@ module ReleaseRobot
 
     def print_all
       print_prep_list
-      print_deploy_list
     end
 
     def print_prep_list
@@ -19,27 +18,19 @@ module ReleaseRobot
 
       puts "For today's release:\n\n"
 
-      pull_requests.each_pair do |status, issues|
-        issues.each do |(repo_name, issue)|
-          puts issue.title
-          puts issue.html_url
-          podio_urls(repo_name, issue).each { |url| puts url }
-          puts "*Build #{status}*"
+      pull_requests.each do |hsh|
+        owner_name_length = ReleaseRobot::Main::REPO_OWNER.size + 1
+        repo_name = hsh.keys.first[owner_name_length..-1]
+        prs = hsh.values.flatten
+
+        if prs.any?
+          puts repo_name
           puts
         end
-      end
-    end
 
-    def print_deploy_list
-      print_title 'List for #deploys'
-
-      puts Date.today.strftime('%D')
-
-      pull_requests.each_pair do |_, issues|
-        issues.each do |(repo_name, issue)|
-          slug = repo_name.gsub('MammothHR/', '')
-
-          puts "(#{slug}) #{issue.title}"
+        prs.each do |pr|
+          puts pr.title
+          podio_urls(repo_name, pr).each { |url| puts url }
         end
       end
     end
@@ -52,8 +43,7 @@ module ReleaseRobot
       puts
     end
 
-    def podio_urls(repo_name, issue)
-      pr = client.pull_request(repo_name, issue.number)
+    def podio_urls(repo_name, pr)
       pr.body.scan PODIO_URL_REGEX
     end
   end
