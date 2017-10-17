@@ -36,8 +36,14 @@ module ReleaseRobot
 
         prs.each do |pr|
           puts pr.title
-          podio_urls(repo_name, pr).each { |url| puts url }
+          collect_podio_urls(repo_name, pr)
         end
+      end
+
+      if podio_urls.any?
+        puts
+        puts 'Podio issues to close:'
+        podio_urls.each { |url| puts url }
       end
     end
 
@@ -49,8 +55,12 @@ module ReleaseRobot
       puts
     end
 
-    def podio_urls(repo_name, pr)
-      pr.body.scan PODIO_URL_REGEX
+    def collect_podio_urls(repo_name, pr)
+      podio_urls << pr.body.scan(PODIO_URL_REGEX)
+    end
+
+    def podio_urls
+      @podio_urls ||= []
     end
   end
 end

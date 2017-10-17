@@ -10,7 +10,6 @@ module ReleaseRobot
 
         repo_name = repo.full_name
 
-
         puts "Fetching issues for #{repo_name}"
 
         tags = client.tags(repo_name)
