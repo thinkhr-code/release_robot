@@ -6,6 +6,7 @@ require 'octokit'
 require 'highline/import'
 require 'release_robot/main'
 require 'release_robot/printer'
+require 'pry'
 
 module ReleaseRobot
   class << self

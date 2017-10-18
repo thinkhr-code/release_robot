@@ -2,6 +2,7 @@ module ReleaseRobot
   class Printer
     PODIO_URL_REGEX = /https:\/\/podio.com\/hranswerlink-8ee92nawfl\/issue-tracker\/apps\/product-feedback\/items\/\d+/
     PRE_DEPLOY_REGEX = /PRE DEPLOY TASKS(.*?)## /m
+    POST_DEPLOY_REGEX = /\bPOST DEPLOY TASKS.*/m
 
     attr_accessor :pull_requests, :client
 
@@ -17,7 +18,7 @@ module ReleaseRobot
     def print_prep_list
       print_title 'Prep list for #releases'
 
-      puts "For today's release:\n\n"
+      puts "For today's release:\n"
 
       pull_requests.each do |(full_repo_name, details_hsh)|
         owner_name_length = ReleaseRobot::Main::REPO_OWNER.size + 1
@@ -27,6 +28,7 @@ module ReleaseRobot
         prs = details_hsh[:merged]
 
         if prs.any?
+          puts
           puts repo_name.upcase
           print 'Latest Version: '
           puts latest_any_version if latest_any_version
@@ -35,16 +37,23 @@ module ReleaseRobot
           puts
         end
 
+        deploy_tasks[repo_name] ||= {}
+
+        puts 'To Be Released: ' if prs.any?
         prs.each do |pr|
           puts pr.title
-          collect_pre_deploy_tasks(repo_name, pr)
+          collect_tasks(repo_name, pr)
           collect_podio_urls(pr)
         end
 
-        if pre_deploy_tasks[repo_name].flatten.any?
-          puts
-          puts "Pre deploy tasks for #{repo_name}:"
-          pre_deploy_tasks[repo_name].each { |task| puts task }
+        if deploy_tasks[repo_name].any?
+          deploy_tasks[repo_name].each_pair do |type, tasks|
+            if tasks.flatten.compact.any?
+              puts
+              puts "#{type.capitalize} deploy tasks for #{repo_name}:"
+              tasks.flatten.compact.each { |task| puts task }
+            end
+          end
         end
       end
 
@@ -63,21 +72,37 @@ module ReleaseRobot
       puts
     end
 
-    def collect_pre_deploy_tasks(repo_name, pr)
-      enclosed = pr.body[PRE_DEPLOY_REGEX, 1]
+    def collect_tasks(repo_name, pr)
+      deploy_tasks[repo_name] ||= {}
 
-      return if enclosed.nil?
+      # @TODO: Fix this spaghetti - change PR template so it is easier to parse
+      %w(pre post).each do |type|
+        if type == 'pre'
+          regex = PRE_DEPLOY_REGEX
+          enclosed = pr.body[regex, 1]
+          next if enclosed.nil?
+          lines = enclosed.split("\r\n")
+        elsif type == 'post'
+          regex = POST_DEPLOY_REGEX
+          enclosed = pr.body.scan(regex)
+          next if enclosed.empty?
+          lines = enclosed.first.split("\r\n")
+        end
 
-      pre_deploy_tasks[repo_name] = [] if pre_deploy_tasks[repo_name].nil?
-      pre_deploy_tasks[repo_name] << enclosed.split("\r\n").map do |line|
-        next if line.size < 6 # Not blank or blank with checkbox
+        next if lines.empty?
 
-        line.gsub('- [ ] ', '').gsub("\r\n", '')
+        deploy_tasks[repo_name][type] ||= []
+        deploy_tasks[repo_name][type] << lines.map do |line|
+          next if line == 'POST DEPLOY TASKS'
+          next if line.size < 6 # Not blank or blank with checkbox
+
+          line.gsub('- [ ] ', '').gsub("\r\n", '')
+        end
       end
     end
 
-    def pre_deploy_tasks
-      @pre_deploy_tasks ||= {}
+    def deploy_tasks
+      @deploy_tasks ||= {}
     end
 
     def collect_podio_urls(pr)
