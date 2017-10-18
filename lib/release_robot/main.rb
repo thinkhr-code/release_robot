@@ -1,30 +1,26 @@
 module ReleaseRobot
   class Main
-    RELEASE_BASE_BRANCH = 'weekly-release'.freeze
-    THURSDAY_LABEL = 'Ready for Thursday Release'.freeze
-    IMMEDIATE_LABEL = 'Ready for Immediate Release'.freeze
+    REPO_OWNER = 'MammothHR'.freeze
+    VERSION_TAG = /^v?\d+.\d+.\d+$/
+    PULL_REQUEST_NUMBER = /Merge pull request #(...)/
 
     def start
       repos.each do |repo|
-        next unless repo.owner.login == 'MammothHR'
+        next unless repo.owner.login == REPO_OWNER
 
         repo_name = repo.full_name
+
         puts "Fetching issues for #{repo_name}"
 
-        all_issues = labels.map do |label|
-          client.list_issues(repo_name, labels: label)
-        end.flatten
+        tag = get_latest_tag(repo_name)
 
-        all_issues.each do |issue|
-          collect_pull_requests(repo_name, issue)
-        end
+        next if tag.nil?
+
+        merged_prs = get_merged_prs_since_tag(repo_name, tag)
+        pull_requests << { repo_name => merged_prs }
       end
 
       return pull_requests
-    end
-
-    def labels
-      [THURSDAY_LABEL, IMMEDIATE_LABEL]
     end
 
     def client
@@ -39,50 +35,30 @@ module ReleaseRobot
     end
 
     def repos
-      @repos ||= client.repos(owner: 'MammothHR')
+      @repos ||= client.repos(owner: REPO_OWNER)
     end
 
     def pull_requests
-      @pull_requests ||= {
-        'success' => [],
-        'pending' => [],
-        'failure' => []
-      }
+      @pull_requests ||= []
     end
 
-    def collect_pull_requests(repo_name, issue)
-      print "- Determining build status for #{issue.number}"
-      pull_request = client.pull_request(repo_name, issue.number)
-
-      # Build status
-      status = client.combined_status(repo_name, pull_request.head.sha)
-
-      # change_base(repo_name, pull_request)
-
-      sort_issue_by_status(issue, status.state, repo_name)
+    def get_latest_tag(repo_name)
+      client.tags(repo_name).first
     end
 
-    def change_base(repo_name, pull_request)
-      client.update_pull_request(
-        repo_name,
-        pull_request.number,
-        nil,
-        nil,
-        base: RELEASE_BASE_BRANCH
-      )
-    rescue Octokit::UnprocessableEntity => ex
-      puts "Error occurred when attempting to change base branch to #{RELEASE_BASE_BRANCH}:"
-      puts ex.message
-    end
+    def get_merged_prs_since_tag(repo_name, tag)
+      base_sha = tag.commit.sha
+      head_sha = client.commits(repo_name, per_page: 1).first.sha
+      compare_commits = client.compare(repo_name, base_sha, head_sha).commits
 
-    def sort_issue_by_status(issue, status, repo_name)
-      case status
-      when 'success' then pull_requests['success'] << [repo_name, issue]
-      when 'pending' then pull_requests['pending'] << [repo_name, issue]
-      when 'failure' then pull_requests['failure'] << [repo_name, issue]
-      end
-
-      print " -- #{status}\n"
+      compare_commits.map do |c|
+        matches = c.commit.message.match(PULL_REQUEST_NUMBER)
+        unless matches.nil?
+          pr_number = matches.captures.first
+          puts "- Fetching #{repo_name} pull request ##{pr_number}"
+          client.pull_request(repo_name, pr_number)
+        end
+      end.flatten.compact
     end
   end
 end
