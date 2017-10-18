@@ -9,6 +9,7 @@ module ReleaseRobot
         next unless repo.owner.login == REPO_OWNER
 
         repo_name = repo.full_name
+next unless repo.name == 'hrsc'
 
         puts "Fetching issues for #{repo_name}"
 
