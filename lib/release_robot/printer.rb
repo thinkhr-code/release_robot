@@ -30,10 +30,8 @@ module ReleaseRobot
         if prs.any?
           puts
           puts repo_name.upcase
-          print 'Latest Version: '
-          puts latest_any_version if latest_any_version
-          print 'Latest Minor Version: '
-          puts latest_minor_version if latest_minor_version
+          puts "Latest Version: #{latest_any_version}" if latest_any_version
+          puts "Latest Minor Version: #{latest_minor_version}" if latest_minor_version
           puts
         end
 
