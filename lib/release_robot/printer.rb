@@ -39,7 +39,7 @@ module ReleaseRobot
 
         deploy_tasks[repo_name] ||= {}
 
-        puts 'To Be Released: ' if prs.any?
+        puts "\nTo Be Released: " if prs.any?
         prs.each do |pr|
           puts pr.title
           collect_tasks(repo_name, pr)
@@ -48,10 +48,12 @@ module ReleaseRobot
 
         if deploy_tasks[repo_name].any?
           deploy_tasks[repo_name].each_pair do |type, tasks|
-            if tasks.flatten.compact.any?
+            # Regex parsing isn't perfect...
+            valid_tasks = tasks.flatten.reject { |t| t.nil? || t.empty? }
+            if valid_tasks.any?
               puts
               puts "#{type.capitalize} deploy tasks for #{repo_name}:"
-              tasks.flatten.compact.each { |task| puts task }
+              valid_tasks.each { |task| puts task }
             end
           end
         end

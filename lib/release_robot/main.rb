@@ -4,26 +4,43 @@ module ReleaseRobot
     MINOR_VERSION_TAG = /^v?\d+.\d+.0$/
     PULL_REQUEST_NUMBER = /Merge pull request #(...)/
 
+    attr_accessor :since_minor_version
+
+    def initialize(options)
+      @since_minor_version = options.minor
+    end
+
     def start
       repos.each do |repo|
         next unless repo.owner.login == REPO_OWNER
 
         repo_name = repo.full_name
 
-        puts "Fetching issues for #{repo_name}"
+        print "Fetching issues for #{repo_name}"
 
         tags = client.tags(repo_name)
         minor_tag = get_latest_minor_tag(tags)
         latest_tag = tags.first
+        if since_minor_version
+          since_tag = minor_tag
+        else
+          since_tag = latest_tag
+        end
 
-        next if minor_tag.nil?
-
-        merged_prs = get_merged_prs_since_tag(repo_name, minor_tag)
+        if since_tag.nil?
+          print " - no tags found, skipping\n"
+          next
+        else
+          print " since version #{since_tag.name}\n"
+        end
+        merged_prs = get_merged_prs_since_tag(repo_name, since_tag)
         repo_details = {
-          latest_minor_version: minor_tag.name,
+          merged: merged_prs,
           latest_any_version: latest_tag.name,
-          merged: merged_prs
         }
+
+        # New repos with no minor tags yet
+        repo_details.merge(latest_minor_version: minor_tag.name) if minor_tag
         pull_requests << [repo_name, repo_details]
       end
 
