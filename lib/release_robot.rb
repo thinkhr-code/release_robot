@@ -21,7 +21,7 @@ module ReleaseRobot
 
       write_missing_envars(missing_envars) if missing_envars.any?
 
-      robot = ReleaseRobot::Main.new
+      robot = ReleaseRobot::Main.new(options)
       pull_requests = robot.start
       client = robot.client
 
@@ -37,6 +37,11 @@ module ReleaseRobot
 
         opts.separator ''
         opts.separator 'Common options:'
+
+        opts.separator ''
+        opts.on('-m', '--minor-version', 'Get PRs since the last *minor* version (default is to get them from last *patch* version).') do |minor|
+          options.minor = minor
+        end
 
         opts.on_tail('-h', '--help', 'Show this message') do
           puts opts
