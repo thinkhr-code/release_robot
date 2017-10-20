@@ -18,21 +18,19 @@ module ReleaseRobot
     def print_prep_list
       print_title 'Prep list for #releases'
 
-      puts "For today's release:\n"
+      puts "For today's release:"
 
       pull_requests.each do |(full_repo_name, details_hsh)|
-        owner_name_length = ReleaseRobot::Main::REPO_OWNER.size + 1
+        owner_name_length = ReleaseRobot::Repo::OWNER.size + 1
         repo_name = full_repo_name[owner_name_length..-1]
         latest_minor_version = details_hsh[:latest_minor_version]
         latest_any_version = details_hsh[:latest_any_version]
         prs = details_hsh[:merged]
 
         if prs.any?
-          puts
-          puts repo_name.upcase
+          puts "\n\n#{repo_name.upcase}"
           puts "Latest Version: #{latest_any_version}" if latest_any_version
           puts "Latest Minor Version: #{latest_minor_version}" if latest_minor_version
-          puts
         end
 
         deploy_tasks[repo_name] ||= {}
@@ -49,8 +47,7 @@ module ReleaseRobot
             # Regex parsing isn't perfect...
             valid_tasks = tasks.flatten.reject { |t| t.nil? || t.empty? }
             if valid_tasks.any?
-              puts
-              puts "#{type.capitalize} deploy tasks for #{repo_name}:"
+              puts "\n#{type.capitalize} deploy tasks for #{repo_name}:"
               valid_tasks.each { |task| puts task }
             end
           end
