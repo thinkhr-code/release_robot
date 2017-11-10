@@ -13,7 +13,7 @@ This requires your Github username and password to authenticate and requires tha
 
 ## What it does
 
-Currently, this gem will scan all repositories in the `MammothHR` Github account, collect any Pull Requests merged since the last version, parse any Podio URLs, pre deploy tasks, or post deploy tasks from the Pull Request body (provided that repo uses the [standard pull request template](https://github.com/MammothHR/hrsc/blob/master/.github/PULL_REQUEST_TEMPLATE.md)), and print out a summary.
+Currently, this gem will scan all repositories in the `MammothHR` Github account, collect any Pull Requests merged since the last version, parse any Podio URLs, pre deploy tasks, or post deploy tasks from the Pull Request body (provided that repo uses the [standard pull request template](https://github.com/MammothHR/release_robot/blob/master/PULL_REQUEST_TEMPLATE.md)), and print out a summary.
 
 ## Next steps to automate
 
