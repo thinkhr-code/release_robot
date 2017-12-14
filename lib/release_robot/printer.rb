@@ -21,7 +21,7 @@ module ReleaseRobot
       puts "For today's release:\n"
 
       pull_requests.each do |(full_repo_name, details_hsh)|
-        owner_name_length = ReleaseRobot::Main::REPO_OWNER.size + 1
+        owner_name_length = ReleaseRobot::Main::ORG_NAME.size + 1
         repo_name = full_repo_name[owner_name_length..-1]
         latest_minor_version = details_hsh[:latest_minor_version]
         latest_any_version = details_hsh[:latest_any_version]

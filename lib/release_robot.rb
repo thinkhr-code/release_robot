@@ -10,7 +10,7 @@ require 'pry'
 
 module ReleaseRobot
   class << self
-    def run(args)
+    def run(args = nil)
       options = ReleaseRobot.parse(args)
 
       create_settings_file_if_nonexistent
@@ -30,6 +30,8 @@ module ReleaseRobot
 
     def parse(args)
       options = OpenStruct.new
+
+      return options if args.nil?
 
       opt_parser = OptionParser.new do |opts|
         opts.separator ''

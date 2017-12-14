@@ -1,6 +1,6 @@
 module ReleaseRobot
   class Main
-    REPO_OWNER = 'MammothHR'.freeze
+    ORG_NAME = 'MammothHR'.freeze
     MINOR_VERSION_TAG = /^v?\d+.\d+.0$/
     PULL_REQUEST_NUMBER = /Merge pull request #(...)/
 
@@ -12,7 +12,7 @@ module ReleaseRobot
 
     def start
       repos.each do |repo|
-        next unless repo.owner.login == REPO_OWNER
+        next unless repo.owner.login == ORG_NAME
 
         repo_name = repo.full_name
 
@@ -50,7 +50,8 @@ module ReleaseRobot
     def client
       @client ||= Octokit::Client.new(
         login: ENV['GITHUB_USERNAME'],
-        password: ENV['GITHUB_PASSWORD']
+        password: ENV['GITHUB_PASSWORD'],
+        auto_paginate: true
       )
     rescue => ex
       puts "Failed: #{ex}"
@@ -59,7 +60,10 @@ module ReleaseRobot
     end
 
     def repos
-      @repos ||= client.repos(owner: REPO_OWNER)
+      @repos ||= client.org_repos(ORG_NAME).
+        # Why can't I sort this via API, Github?
+        sort { |a, b| a.name <=> b.name }.
+        select { |repo| !repo.fork }
     end
 
     def pull_requests
