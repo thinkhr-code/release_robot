@@ -16,12 +16,14 @@ module ReleaseRobot
     end
 
     def print_prep_list
+      return 'Nothing to release!' unless anything_to_release?
+
       print_title 'Prep list for #releases'
 
       puts "For today's release:"
 
       pull_requests.each do |(full_repo_name, details_hsh)|
-        owner_name_length = ReleaseRobot::Repo::OWNER.size + 1
+        owner_name_length = ReleaseRobot::Repo::ORG_NAME.size + 1
         repo_name = full_repo_name[owner_name_length..-1]
         latest_minor_version = details_hsh[:latest_minor_version]
         latest_any_version = details_hsh[:latest_any_version]
@@ -67,6 +69,12 @@ module ReleaseRobot
       puts title
       puts '-' * 50
       puts
+    end
+
+    def anything_to_release?
+      pull_requests.map do |(_, details)|
+        details[:merged] if details[:merged].any?
+      end.compact.any?
     end
 
     def collect_tasks(repo_name, pr)

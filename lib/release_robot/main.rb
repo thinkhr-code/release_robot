@@ -1,3 +1,6 @@
+require 'uri'
+require 'cgi'
+
 module ReleaseRobot
   class Main
     attr_accessor :since_minor_version
@@ -22,7 +25,8 @@ module ReleaseRobot
     def client
       @client ||= Octokit::Client.new(
         login: ENV['GITHUB_USERNAME'],
-        password: ENV['GITHUB_PASSWORD']
+        password: ENV['GITHUB_PASSWORD'],
+        # auto_paginate: true
       )
     rescue => ex
       puts "Failed: #{ex}"
@@ -33,6 +37,7 @@ module ReleaseRobot
     def repos
       @repos ||= Repo.all
     end
+
 
     def pull_requests
       @pull_requests ||= []

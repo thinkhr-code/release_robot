@@ -1,6 +1,6 @@
 module ReleaseRobot
   class Repo
-    OWNER = 'MammothHR'.freeze
+    ORG_NAME = 'MammothHR'.freeze
     MINOR_VERSION_TAG = /^v?\d+.\d+.0$/
     PULL_REQUEST_NUMBER = /Merge pull request #(...)/
 
@@ -10,15 +10,33 @@ module ReleaseRobot
       attr_accessor :repos
 
       def import(client, since_minor_version)
-        @repos = client.repos(owner: OWNER).map do |repo|
-          if repo.owner.login == OWNER
-            Repo.new(client, repo, since_minor_version)
-          end
+        @repos = fetch_repos(client).map do |repo|
+          Repo.new(client, repo, since_minor_version)
         end.compact
       end
 
       def all
         @repos.flatten
+      end
+
+      # @TODO: Clean up this rat's nest - it is necessary because of pagination
+      # and because octokit's `auto_paginate` does not seem to behave properly
+      def fetch_repos(client)
+        repos = client.org_repos(ORG_NAME)
+        last_page_uri = URI.parse(client.last_response.rels[:last].href)
+
+        # @TODO: Does this break if there is only one page?
+        total_pages = CGI.parse(last_page_uri.query)['page'].first.to_i
+
+        return repos if total_pages < 2
+
+        2.upto(total_pages) do |page|
+          repos << client.org_repos(ORG_NAME, page: page)
+        end
+
+        repos.flatten.
+          sort { |a, b| a.name <=> b.name }.  # alphabetical
+          select { |repo| !repo.fork }        # no forks
       end
     end
 
