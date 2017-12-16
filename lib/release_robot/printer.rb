@@ -16,6 +16,8 @@ module ReleaseRobot
     end
 
     def print_prep_list
+      return 'Nothing to release!' unless anything_to_release?
+
       print_title 'Prep list for #releases'
 
       puts "For today's release:\n"
@@ -70,6 +72,12 @@ module ReleaseRobot
       puts title
       puts '-' * 50
       puts
+    end
+
+    def anything_to_release?
+      pull_requests.map do |(_, details)|
+        details[:merged] if details[:merged].any?
+      end.compact.any?
     end
 
     def collect_tasks(repo_name, pr)

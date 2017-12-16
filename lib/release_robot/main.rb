@@ -1,3 +1,6 @@
+require 'uri'
+require 'cgi'
+
 module ReleaseRobot
   class Main
     ORG_NAME = 'MammothHR'.freeze
@@ -51,7 +54,7 @@ module ReleaseRobot
       @client ||= Octokit::Client.new(
         login: ENV['GITHUB_USERNAME'],
         password: ENV['GITHUB_PASSWORD'],
-        auto_paginate: true
+        # auto_paginate: true
       )
     rescue => ex
       puts "Failed: #{ex}"
@@ -60,10 +63,25 @@ module ReleaseRobot
     end
 
     def repos
-      @repos ||= client.org_repos(ORG_NAME).
-        # Why can't I sort this via API, Github?
-        sort { |a, b| a.name <=> b.name }.
-        select { |repo| !repo.fork }
+      @repos ||= fetch_repos
+    end
+
+    def fetch_repos
+      repos = client.org_repos(ORG_NAME)
+      last_page_uri = URI.parse(client.last_response.rels[:last].href)
+
+      # @TODO: Does this break if there is only one page?
+      total_pages = CGI.parse(last_page_uri.query)['page'].first.to_i
+
+      return repos if total_pages < 2
+
+      2.upto(total_pages) do |page|
+        repos << client.org_repos(ORG_NAME, page: page)
+      end
+
+      repos.flatten.
+        sort { |a, b| a.name <=> b.name }.  # alphabetical
+        select { |repo| !repo.fork }        # no forks
     end
 
     def pull_requests
