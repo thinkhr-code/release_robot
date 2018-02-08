@@ -2,7 +2,7 @@ module ReleaseRobot
   class Repo
     ORG_NAME = 'MammothHR'.freeze
     MINOR_VERSION_TAG = /^v?\d+.\d+.0$/
-    PULL_REQUEST_NUMBER = /Merge pull request #(...)/
+    PULL_REQUEST_NUMBER = /Merge pull request #(\d+)/
 
     attr_accessor :client, :github_repo, :since_minor_version
 
